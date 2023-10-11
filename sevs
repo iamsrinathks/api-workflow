@@ -1,0 +1,27 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: cloud-sql-service-entry
+spec:
+  hosts:
+  - cloudsql-db-instance-connection-name
+  ports:
+  - number: 5432
+    name: tcp
+  location: MESH_EXTERNAL
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cloud-sql-virtual-service
+spec:
+  hosts:
+  - cloudsql-db-instance-connection-name
+  gateways:
+  - istio-egressgateway
+  tcp:
+  - route:
+    - destination:
+        host: cloudsql-db-instance-connection-name
+        port:
+          number: 5432
