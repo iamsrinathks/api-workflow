@@ -1,0 +1,35 @@
+{{- $root := . -}}
+{{- range $ap := .Values.authPolicies }}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ $ap.name }}
+  namespace: {{ $root.Release.Namespace }}
+spec:
+  selector:
+    {{- if $ap.selector }}
+    {{- toYaml $ap.selector | nindent 6 }}
+    {{- else }}
+    {{- toYaml $root.Values.labels | nindent 6 }}
+    {{- end }}
+  action: {{- default "ALLOW" $ap.type }}
+  rules:
+    {{- if $ap.from }}
+    - from:
+        {{- toYaml $ap.from | nindent 4 }}
+    {{- end }}
+    - to:
+      {{- range $operation := index $ap.operations 0 | default $root.Values.defaults.authPolicies.operations }}
+      - operation:
+          methods:
+          {{- range $method := $operation.methods }}
+            - {{ $method }}
+          {{- end }}
+          paths:
+          {{- range $path := $operation.paths }}
+            - {{ $path }}
+          {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}
