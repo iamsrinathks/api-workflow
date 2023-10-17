@@ -1,0 +1,43 @@
+Subject: Removal of Istio CNI - Mitigating Communication Challenges with Custom Init Containers
+
+Dear Team,
+
+I would like to address a recent challenge we have encountered in our DevOps environment, specifically related to the use of Istio CNI (Container Network Interface). This message aims to provide a detailed explanation of the issue and the rationale for considering the removal of Istio CNI for specific use cases.
+
+**Background:**
+
+As a DevOps engineer, our team has implemented Istio CNI to enhance the security and observability of our microservices within our Kubernetes cluster. Istio CNI offers numerous benefits, including automatic sidecar injection, which enforces traffic redirection through sidecars. This approach significantly improves service mesh capabilities and helps us achieve our goals of better visibility and control over microservice communication.
+
+**The Challenge:**
+
+While Istio CNI serves our requirements effectively for most scenarios, we have encountered a particular use case that presents communication challenges. Specifically, when our microservices need to communicate with external services, such as HashiCorp Vault, through a custom init container, the Istio CNI presents a limitation.
+
+The challenge arises because the Istio CNI enforces traffic redirection via the sidecar containers, which are crucial for Istio's service mesh functionality. However, these sidecar containers are not available for communication until the init container completes its tasks. This sequence of events leads to communication failures between our microservices and external services, such as HashiCorp Vault.
+
+**Potential Workaround:**
+
+One potential workaround is to configure the custom init container to run as a custom user. By doing so, the init container may complete its tasks without waiting for the sidecar containers to become available. This allows the communication between the init container and external services to proceed without interruptions.
+
+**Rationale for Removal:**
+
+While the workaround of running the custom init container as a custom user may address the communication challenge, it introduces additional complexity and management overhead. It requires careful consideration of user permissions, security implications, and potential conflicts with Istio's core functionality.
+
+**Next Steps:**
+
+Given the constraints and potential complexities associated with the workaround, we are considering the removal of Istio CNI for this specific use case, where custom init containers are essential for communication with external services. This removal will not impact the overall use of Istio in our environment but will provide the necessary flexibility to address these specific challenges effectively.
+
+We will be exploring alternative solutions and evaluating the impact of this change on our existing processes. Our aim is to find a suitable approach that balances our need for service mesh capabilities with the practicalities of running custom init containers.
+
+**Conclusion:**
+
+The use of Istio CNI has been a valuable addition to our Kubernetes environment, enhancing the security and observability of our microservices. However, in specific use cases where custom init containers are necessary for communication with external services, it may present challenges that require careful consideration.
+
+We appreciate your understanding and support as we continue to adapt and optimize our DevOps environment to meet our evolving requirements effectively. If you have any questions or suggestions related to this matter, please feel free to reach out.
+
+Thank you for your attention.
+
+Best regards,
+
+[Your Name]
+[Your Title]
+[Your Contact Information]
