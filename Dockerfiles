@@ -1,0 +1,18 @@
+# Use a base image that provides Python, PostgreSQL client, and other dependencies.
+FROM python:3.9-slim
+
+# Set the working directory in the container.
+WORKDIR /app
+
+# Copy your application code into the container.
+COPY app.py /app/
+
+# Install Flask and the PostgreSQL client.
+RUN pip install Flask && \
+    apt-get update && apt-get install -y postgresql-client && apt-get clean
+
+# Specify the command to run your long-lived service (Flask web server).
+CMD ["python", "app.py"]
+
+# Expose the port your service will listen on.
+EXPOSE 5000
