@@ -1,15 +1,16 @@
 from flask import Flask
 import psycopg2
+import os
 
 app = Flask(__name)
 
 # Define the database connection parameters.
 db_params = {
-    'dbname': 'your-db-name',
-    'user': 'your-db-username',
-    'password': 'your-db-password',
-    'host': 'your-db-host',
-    'port': 'your-db-port',
+    'dbname': os.environ.get('DB_NAME', 'your-db-name'),
+    'user': os.environ.get('DB_USER', 'your-db-username'),
+    'password': os.environ.get('DB_PASS', 'your-db-password'),
+    'host': '127.0.0.1',  # Local host where the Cloud SQL proxy is running
+    'port': '5432',       # Port used by the Cloud SQL proxy
 }
 
 def query_postgres():
