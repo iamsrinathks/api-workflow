@@ -1,0 +1,77 @@
+{{- $root := . -}}
+{{- range $np := $.Values.networkPolicies }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $np.name }}
+  namespace: {{ $root.Release.Namespace }}
+spec:
+{{- if $np.podSelector }}
+  podSelector:
+    matchLabels:
+{{ toYaml $np.podSelector.matchLabels | indent 7 }}
+{{- end }}
+{{- if or $np.ingressRules $np.egressRules }}
+  policyTypes:
+{{- if $np.ingressRules }}
+    - Ingress
+{{- end }}
+{{- if $np.egressRules }}
+    - Egress
+{{- end }}
+{{- end }}
+{{- if $np.egressRules }}
+  egress:
+{{-  range $rule := $np.egressRules }}
+    - to:
+{{ toYaml $rule.selectors | indent 9 }}
+      ports:
+{{ toYaml $rule.ports | indent 9 }}
+{{- end }}
+{{- end }}
+{{- if $np.ingressRules }}
+  ingress:
+{{-  range $rule := $np.ingressRules }}
+    - from:
+{{ toYaml $rule.selectors | indent 9 }}
+      ports:
+{{ toYaml $rule.ports | indent 9 }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+
+
+
+networkPolicies:
+  - name: "web-app-policy" #Required
+    podSelector:
+      matchLabels:
+        app: "web-app"
+    ingressRules:
+      - from:
+        - podSelector:
+              matchLabels:
+              role: "frontend"
+        - namespaceSelector:
+              matchLabels:
+              role: "frontend"
+        - ipBlock:
+            cidr: 192.168.1.10/32
+        ports:
+        - protocol: TCP
+          port: 3306
+    egressRules:
+      - to:
+        - podSelector:
+              matchLabels:
+              role: "frontend"
+        - namespaceSelector:
+              matchLabels:
+              role: "frontend"
+        - ipBlock:
+            cidr: 192.168.1.10/32
+        ports:
+        - protocol: TCP
+          port: 443
