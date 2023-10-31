@@ -1,0 +1,101 @@
+git-creds-secretName: git-creds
+git-creds-username-secret: YOUR_GIT_USERNAME_SECRET
+git-creds-token-secret: YOUR_GIT_TOKEN_SECRET
+
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.serviceAccountName }}
+
+
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: {{ .Values.secretProviderClassName }}
+spec:
+  secretObjects:
+    - secretName: {{ .Values.secretName }}
+      type: Opaque
+      data:
+        - objectName: {{ .Values.usernameSecretName }}
+          key: username
+        - objectName: {{ .Values.tokenSecretName }}
+          key: token
+  provider: gcp
+  parameters:
+    secrets: |
+      - resourceName: "projects/{{ .Values.projectID }}/secrets/{{ .Values.usernameSecretName }}/versions/latest"
+        path: {{ .Values.usernameSecretName }}
+      - resourceName: "projects/{{ .Values.projectID }}/secrets/{{ .Values.tokenSecretName }}/versions/latest"
+        path: {{ .Values.tokenSecretName }}
+
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Values.podName }}
+spec:
+  serviceAccountName: {{ .Values.serviceAccountName }}
+  containers:
+    - image: {{ .Values.containerImage }}
+      imagePullPolicy: IfNotPresent
+      name: {{ .Values.containerName }}
+      resources:
+        requests:
+          cpu: 100m
+      stdin: true
+      stdinOnce: true
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      tty: true
+      env:
+        - name: GIT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secretName }}
+              key: username
+        - name: GIT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secretName }}
+              key: token
+    volumeMounts:
+      - name: {{ .Values.volumeName }}
+        mountPath: {{ .Values.mountPath }}
+  volumes:
+    - name: {{ .Values.volumeName }}
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: {{ .Values.secretProviderClassName }}
+
+
+
+
+serviceAccountName: my-service-account
+# Add other values as needed, such as GSA_NAME, GSA_PROJECT, PROJECT_ID, NAMESPACE, etc.
+
+  
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-iam-policy-binding-job
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ .Values.serviceAccountName }}
+      containers:
+        - name: iam-policy-binding-container
+          image: google/cloud-sdk:latest
+          command:
+            - "sh"
+            - "-c"
+          args:
+            - |
+              gcloud iam service-accounts add-iam-policy-binding {{ .Values.gsaName }}@{{ .Values.projectID }}.iam.gserviceaccount.com \
+              --role roles/iam.workloadIdentityUser \
+              --member "serviceAccount:{{ .Values.projectID }}.svc.id.goog/{{ .Values.namespace }}/{{ .Values.serviceAccountName }}"
+
